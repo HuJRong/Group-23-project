@@ -1,0 +1,94 @@
+# Pyscent 配置文件
+# 用于自定义检测阈值和忽略规则
+
+# 检测阈值配置
+thresholds:
+  # 长方法检测：方法中语句数量超过此值视为长方法
+  long_method: 20
+  
+  # 长参数列表：参数数量超过此值视为过长
+  long_parameter: 5
+  
+  # 长分支：分支数量超过此值
+  long_branches: 10
+  
+  # 类属性过多：类中属性数量超过此值
+  too_many_attributes: 10
+  
+  # 类方法过多：类中方法数量超过此值
+  too_many_methods: 20
+  
+  # 长Lambda：Lambda表达式字符数超过此值
+  long_lambda: 60
+  
+  # 长列表推导：列表推导字符数超过此值
+  long_list_comp: 72
+  
+  # 类内聚度：低于此值视为低内聚
+  low_cohesion: 30
+  
+  # 圈复杂度：等级低于此值（A-F，C表示中等复杂度）
+  cyclomatic_complexity_rank: "C"
+  
+  # 重复代码：代码块相似度超过此百分比视为重复
+  duplicate_code_similarity: 80
+  
+  # 魔法数字：数字字面量出现次数超过此值视为魔法数字
+  magic_number_threshold: 3
+
+# 忽略规则
+ignore:
+  # 忽略的目录（相对于项目根目录）
+  directories:
+    - "venv"
+    - "__pycache__"
+    - ".git"
+    - "node_modules"
+    - "*.egg-info"
+  
+  # 忽略的文件模式
+  files:
+    - "*/test_*.py"
+    - "*/__init__.py"
+    - "*/migrations/*.py"
+  
+  # 忽略的检测类型（不执行这些检测）
+  detectors:
+    # - "duplicate_code"
+    # - "magic_number"
+
+# 输出配置
+output:
+  # 输出目录
+  directory: "output"
+  
+  # 图表目录
+  plots_directory: "plots"
+  
+  # 日志目录
+  logs_directory: "output/logs"
+  
+  # 是否生成PDF报告
+  generate_pdf: true
+  
+  # 是否生成HTML报告
+  generate_html: false
+  
+  # 是否生成JSON报告
+  generate_json: false
+
+# 可视化配置
+visualization:
+  # 图表类型：bar, pie, scatter, heatmap
+  chart_types:
+    - "bar"
+    - "pie"
+  
+  # 图表主题
+  theme: "default"
+  
+  # 图表尺寸（英寸）
+  figure_size:
+    width: 10
+    height: 6
+

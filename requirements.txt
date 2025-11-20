@@ -1,0 +1,8 @@
+astor>=0.8.1
+cohesion==0.9.1
+fpdf2>=2.7.9
+matplotlib>=3.8.0
+pylint>=3.2.0
+radon>=6.0.0
+pyyaml>=6.0
+plotly>=5.0.0
