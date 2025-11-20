@@ -16,24 +16,4 @@
 ## Process Flow
 ![Process Flow](https://i.imgur.com/2HsO83e.png)
 
-## How to Run
-- `cd <pyscent_root_directory>`
-- `python pyscent.py <path_to_project_to_inspect>`
 
-## Used Tools
-### Static Code Analysis Tools
-- pylint (https://www.pylint.org)
-- pyflakes (https://github.com/PyCQA/pyflakes)
-- Radon (https://pypi.org/project/radon/)
-- Cohesion (https://github.com/mschwager/cohesion)
-### Libraries
-- ast — Abstract Syntax Trees (https://docs.python.org/3/library/ast.html)
-- astor - Manupulation of Python Source via the AST (https://pypi.org/project/astor)
-- matplotlib - Visualization of Code Smell Metrics (https://matplotlib.org)
-- subprocess - Subprocess Management (https://docs.python.org/2/library/subprocess.html)
-- shlex - Simple Lexcial Analysis (https://docs.python.org/3/library/shlex.html)
-- etc.
-
-## Team
-- Jaewoo Kim (https://github.com/jaywoo123)
-- Yong Jin Kim (https://github.com/whyjay17)
