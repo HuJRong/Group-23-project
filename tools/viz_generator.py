@@ -1,6 +1,6 @@
 """
-可视化生成器
-支持多种图表类型：条形图、饼图、散点图、热力图
+Visualization generator
+Supports multiple chart types: bar charts, pie charts, scatter plots, and heat maps
 """
 import os
 import re
@@ -28,23 +28,23 @@ output_list = []
 
 def generate_viz(data, label, filename, chart_type="bar"):
     """
-    生成可视化图表
+    Generate visualization charts
     
     Args:
-        data: 日志文件内容
-        label: Y轴标签
-        filename: 日志文件名
-        chart_type: 图表类型 ("bar", "pie", "scatter", "heatmap")
+        data: Log file content
+        label: Y-axis label
+        filename: Log filename
+        chart_type: Chart type ("bar", "pie", "scatter", "heatmap")
     """
     config = get_config()
     chart_types = config.config.get("visualization", {}).get("chart_types", ["bar"])
     
-    # 解析数据
+    # Parse data
     parsed_data = _parse_log_data(data, filename)
     if not parsed_data:
         return
     
-    # 根据配置生成图表
+    # Generate charts based on configuration
     if "bar" in chart_types:
         _generate_bar_chart(parsed_data, label, filename)
     if "pie" in chart_types and len(parsed_data) <= 10:
@@ -56,7 +56,7 @@ def generate_viz(data, label, filename, chart_type="bar"):
 
 
 def _parse_log_data(data, filename):
-    """解析日志数据，返回统一格式"""
+    """Parse log data and return unified format"""
     lines = data.splitlines()
     lines = [line.strip() for line in lines if line.strip()]
     if len(lines) < 1:
@@ -66,18 +66,18 @@ def _parse_log_data(data, filename):
     
     for line in lines:
         try:
-            # 解析不同格式的日志
+            # Parse different formats of logs
             if "filename:" in line:
-                # 标准格式: "filename: xxx lineno: yyy metric: zzz"
-                # 或: "filename: xxx, smelly_lines: yyy, metric: zzz"
+                # Standard format: "filename: xxx lineno: yyy metric: zzz"
+                # Or: "filename: xxx, smelly_lines: yyy, metric: zzz"
                 filename_part = line.split("filename:")[1]
                 if "," in filename_part:
                     file_name = filename_part.split(",")[0].strip()
                 else:
                     file_name = filename_part.split()[0].strip()
                 
-                # 提取数值
-                metric_value = 1  # 默认值
+                # Extract metric value
+                metric_value = 1  # Default value
                 if "metric:" in line:
                     metric_part = line.split("metric:")[1].strip()
                     try:
@@ -112,20 +112,20 @@ def _generate_bar_chart(data, label, filename):
     if not data:
         return
     
-    # 聚合数据（按文件名）
+    # Aggregate data by filename
     file_counts = Counter()
     for item in data:
         file_counts[item["filename"]] += item["value"]
     
-    # 限制显示数量
+    # Limit display to top 20 files
     top_items = file_counts.most_common(20)
     x_val = [item[0] for item in top_items]
     y_val = [item[1] for item in top_items]
     
     figure(figsize=(12, 6))
     bar(x_val, y_val, color="#85b1dd")
-    xticks(rotation=90)
-    xlabel("file names")
+    xticks(rotation=0)
+    xlabel("File Names")
     title(filename[:-4])  # Remove .txt extension
     ylabel(label)
     tight_layout()
@@ -136,16 +136,16 @@ def _generate_bar_chart(data, label, filename):
 
 
 def _generate_pie_chart(data, label, filename):
-    """生成饼图"""
+    """Generate pie chart"""
     if not data or len(data) > 10:
         return
     
-    # 聚合数据
+    # Aggregate data by filename
     file_counts = Counter()
     for item in data:
         file_counts[item["filename"]] += item["value"]
     
-    # 只显示前10个
+    # Limit display to top 10 files
     top_items = file_counts.most_common(10)
     labels = [item[0] for item in top_items]
     sizes = [item[1] for item in top_items]
@@ -161,21 +161,21 @@ def _generate_pie_chart(data, label, filename):
 
 
 def _generate_scatter_chart(data, label, filename):
-    """生成散点图（用于显示分布）"""
+    """Generate scatter chart (to show distribution)"""
     if not data:
         return
     
-    # 按文件聚合
+    # Aggregate data by filename
     file_values = defaultdict(list)
     for item in data:
         file_values[item["filename"]].append(item["value"])
     
-    # 计算每个文件的统计信息
+    # Calculate statistics for each file
     files = []
     means = []
     maxs = []
     
-    for file, values in list(file_values.items())[:20]:  # 限制20个文件
+    for file, values in list(file_values.items())[:20]:  # Limit to top 20 files
         files.append(file)
         means.append(np.mean(values))
         maxs.append(np.max(values))
@@ -183,8 +183,8 @@ def _generate_scatter_chart(data, label, filename):
     figure(figsize=(10, 6))
     scatter(range(len(files)), means, s=100, alpha=0.6, c=maxs, cmap='viridis')
     colorbar(label='Max Value')
-    xticks(range(len(files)), files, rotation=90)
-    xlabel("file names")
+    xticks(range(len(files)), files, rotation=0)
+    xlabel("File Names")
     ylabel(f"{label} (mean)")
     title(f"{filename[:-4]} - Distribution")
     tight_layout()
@@ -195,19 +195,19 @@ def _generate_scatter_chart(data, label, filename):
 
 
 def _generate_heatmap(data, label, filename):
-    """生成热力图（按文件和时间/类型分组）"""
+    """Generate heatmap (by file and time/type)"""
     if not data:
         return
     
-    # 按文件分组统计
+    # Aggregate data by filename
     file_counts = Counter()
     for item in data:
         file_counts[item["filename"]] += item["value"]
     
-    # 只显示前15个文件
+    # Limit display to top 15 files
     top_files = [f[0] for f in file_counts.most_common(15)]
     
-    # 创建矩阵数据（这里简化处理，实际可以更复杂）
+    # Create matrix data (simplified here, can be more complex)
     matrix_data = []
     for file in top_files:
         count = file_counts[file]
@@ -230,7 +230,7 @@ def _generate_heatmap(data, label, filename):
 
 
 def _get_plots_dir():
-    """获取图表目录"""
+    """Get plots directory"""
     config = get_config()
     plot_dir = config.get_plots_dir()
     if not os.path.exists(plot_dir):
@@ -239,7 +239,7 @@ def _get_plots_dir():
 
 
 def add_viz():
-    """为所有日志文件生成可视化图表"""
+    """Generate visualizations for all log files"""
     config = get_config()
     logs_dir = config.get_logs_dir()
     
@@ -255,7 +255,7 @@ def add_viz():
                 with open(file_path, encoding='UTF8') as f:
                     data = f.read()
                     
-                    # 根据文件名确定标签
+                    # Determine the label based on the file name
                     if "many" in filename:
                         label = "count"
                     elif "long" in filename:
@@ -271,7 +271,7 @@ def add_viz():
                     else:
                         label = "metric"
                     
-                    # 生成图表（使用配置中的第一个图表类型作为主要类型）
+                    # Generate charts (use the first chart type in config as primary type)
                     generate_viz(data, label, filename, chart_types[0] if chart_types else "bar")
             except (OSError, IOError) as e:
                 continue
