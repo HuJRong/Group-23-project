@@ -29,6 +29,20 @@ def detect_main(directory, config_path=None):
         config = get_config(config_path)
     else:
         config = get_config()
+    # 清理上一轮的日志，避免旧数据残留到报告
+    try:
+        logs_dir = config.get_logs_dir()
+        if os.path.isdir(logs_dir):
+            for name in os.listdir(logs_dir):
+                if name.endswith(".txt"):
+                    try:
+                        os.unlink(os.path.join(logs_dir, name))
+                    except OSError:
+                        pass
+        else:
+            os.makedirs(logs_dir, exist_ok=True)
+    except Exception:
+        pass
     
     # Get stats for files in directory
     stats_dict = get_stats(directory)
