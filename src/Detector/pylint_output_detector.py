@@ -4,6 +4,7 @@ import collections
 import re
 # import CodeSmellHandlers.HandleLongMethodSmell.long_method as lm
 from .CodeSmellHandlers.HandleLongMethodSmell.long_method import output_long_methods
+from ..config_loader import get_config
 def detect_pylint_output(directory):
     
     output_list = detect_pylint_output_helper(directory)
@@ -92,17 +93,15 @@ def smell_to_obj(smell):
     return obj
 
 def generate_log(dirname, log_object):
-    log_dir = os.path.join("output", "logs")
+    config = get_config()
+    log_dir = config.get_logs_dir()
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    for smell in log_object:  
+    for smell in log_object:
         log_path = os.path.join(log_dir, "{}_logs.txt".format(smell))
-        # Only create log file if there are items to write
-        if log_object[smell]:
-            log = open(log_path, "w", encoding="utf8")
+        with open(log_path, "w", encoding="utf8") as log:
             for elem in log_object[smell]:
                 log.write('filename: {}, smelly_lines: {}, metric: {}\n'.format(elem['filename'], str(elem['lineno']), str(elem['metric'])))
-            log.close()
 # TEST Runs: remove later
             
 #obj, num_long_methods, num_long_params, num_long_branches, num_many_attrb, num_many_methods = \
