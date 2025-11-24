@@ -1,0 +1,186 @@
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import yaml
+from graphviz import Digraph
+
+# ======== 配置 ========
+OUTPUT_LOGS = "output/logs"  # 代码坏味道日志目录
+CONFIG_PATH = "config.yaml"  # 配置文件路径
+TOOLS_DIR = "tools"  # 工具目录
+
+
+# ======== 工具函数 ========
+def parse_logs():
+    """读取 output/logs 中的坏味道日志，统计数量"""
+    smell_counts = {}
+    if not os.path.isdir(OUTPUT_LOGS):
+        print(f"⚠ 未找到 {OUTPUT_LOGS} 目录")
+        return smell_counts
+
+    for file in os.listdir(OUTPUT_LOGS):
+        if file.endswith(".txt"):
+            path = os.path.join(OUTPUT_LOGS, file)
+            with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = [line.strip() for line in f if line.strip()]
+                smell_counts[file.replace('_logs.txt', '')] = len(lines)
+    return smell_counts
+
+
+def load_config_tools():
+    """从 config.yaml 读取启用的工具"""
+    tools = []
+    if not os.path.exists(CONFIG_PATH):
+        return tools
+
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            cfg = yaml.safe_load(f) or {}
+        tools_section = cfg.get('tools', {})
+        if isinstance(tools_section, dict):
+            for k, v in tools_section.items():
+                enabled = True
+                if isinstance(v, dict):
+                    enabled = v.get('enabled', True)
+                elif isinstance(v, bool):
+                    enabled = v
+                if enabled:
+                    tools.append(str(k))
+    except Exception as e:
+        print(f"读取 config.yaml 出错: {e}")
+    return tools
+
+
+def scan_tools_dir():
+    """扫描 tools 目录中的工具文件夹"""
+    if not os.path.isdir(TOOLS_DIR):
+        return []
+    return sorted([
+        d for d in os.listdir(TOOLS_DIR)
+        if os.path.isdir(os.path.join(TOOLS_DIR, d)) and not d.startswith('_')
+    ])
+
+
+def ensure_tools(config_tools, dir_tools):
+    """确定最终工具列表"""
+    if config_tools:
+        return sorted(set(config_tools))
+    if dir_tools:
+        return dir_tools
+    return ['pylint', 'pyflakes', 'radon', 'custom_rules']
+
+
+# ======== 图像生成函数 ========
+def fig13_tool_comparison(tools):
+    """生成 Fig.13 工具对比矩阵"""
+    # 这里的数据可按实际项目修改
+    data = {
+        'Tool': tools,
+        'CLI Support': [True] * len(tools),
+        'Output Format': ['Text', 'Text', 'JSON', 'CSV'][:len(tools)],
+        'Smell Types Detected': [5, 3, 2, 6][:len(tools)]
+    }
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(6, 3))
+    sns.heatmap(df.set_index('Tool').notnull(), annot=True, cbar=False)
+    plt.title("Fig.13 Tool Comparison Matrix")
+    plt.savefig("fig13_tool_comparison.png", dpi=300)
+    plt.close()
+
+
+def fig14_pipeline(tools):
+    """生成 Fig.14 流程图（Graphviz 绘制）"""
+    g = Digraph('Fig14_PyscentPipeline', format='png')
+    g.attr(rankdir='LR', splines='ortho', fontname='Microsoft YaHei, Arial', nodesep='0.5', ranksep='1')
+
+    def box(name, label):
+        g.node(name, label, shape='box', style='rounded,filled', fillcolor='white')
+
+    # 节点
+    box('codebase', 'Target Codebase
+    (输入路径)
+    ')
+    box('config', 'config.yaml + CLI
+    (配置)
+    ')
+    box('runner', 'Pyscent Runner
+    (CodeSmellTool)
+    ')
+    box('normalizer', 'Unified Parser/Normalizer
+    (格式统一)
+    ')
+    box('aggregator', 'Aggregator
+    (合并 / 统计)
+    ')
+    box('export', 'Exporter → output/logs
+    (JSON / CSV / TXT)
+    ')
+    box('viz', 'Visualization → plots
+    (Fig
+    .15 / 16)')
+    box('report', 'Report/Artifacts
+    (HTML / Excel / MD)
+    ')
+
+    # 工具集群
+    with g.subgraph(name='cluster_tools') as c:
+        c.attr(label='Tool Runners', style='rounded', color='#bbbbbb')
+    for i, t in enumerate(tools, 1):
+        c.node(f'tool_{i}', t, shape='box', style='rounded,filled', fillcolor='#f5f5f5')
+
+    # 连线
+    g.edge('codebase', 'runner', label='源码')
+    g.edge('config', 'runner', label='配置')
+    for i, _ in enumerate(tools, 1):
+        g.edge('runner', f'tool_{i}', label='执行')
+    g.edge(f'tool_{i}', 'normalizer', label='原始输出')
+
+    g.edge('normalizer', 'aggregator', label='统一/合并')
+    g.edge('aggregator', 'export', label='统计结果')
+    g.edge('aggregator', 'viz', label='图表数据')
+    g.edge('viz', 'report', label='用于报告')
+    g.edge('export', 'report', style='dashed', label='可选引用')
+
+    g.render(filename='fig14_pipeline', cleanup=True)
+    print("✅ 已生成 fig14_pipeline.png")
+
+
+def fig15_smell_distribution(smell_counts):
+    """生成 Fig.15 坏味道分布柱状图"""
+    labels = list(smell_counts.keys())
+    counts = list(smell_counts.values())
+    plt.figure(figsize=(8, 4))
+    plt.bar(labels, counts, color='skyblue')
+    plt.xticks(rotation=45, ha='right')
+    plt.ylabel("Number of smells")
+    plt.title("Fig.15 Code Smell Distribution")
+    plt.tight_layout()
+    plt.savefig("fig15_smell_distribution.png", dpi=300)
+    plt.close()
+
+
+def fig16_pie_chart(smell_counts):
+    """生成 Fig.16 坏味道分布饼图"""
+    plt.figure(figsize=(6, 6))
+    plt.pie(smell_counts.values(), labels=smell_counts.keys(), autopct='%1.1f%%')
+    plt.title("Fig.16 Code Smell Distribution Pie")
+    plt.savefig("fig16_smell_distribution_pie.png", dpi=300)
+    plt.close()
+
+
+# ======== 主运行入口 ========
+if __name__ == "__main__":
+    smells = parse_logs()
+    config_tools = load_config_tools()
+    dir_tools = scan_tools_dir()
+    tools = ensure_tools(config_tools, dir_tools)
+
+    fig13_tool_comparison(tools)
+    fig14_pipeline(tools)
+    if smells:
+        fig15_smell_distribution(smells)
+        fig16_pie_chart(smells)
+
+    print("✅ 已生成 Fig.13 ~ Fig.16 PNG 文件")
+    print("👉 Fig.17 ~ Fig.19 请插入项目 GitHub、Excel、会议记录截图")
